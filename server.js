@@ -12,7 +12,8 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 // ملف التقييمات
-const FILE = path.join("/tmp", "feedback.json");
+// سيتم حفظه داخل مجلد المشروع نفسه
+const FILE = path.join(__dirname, "feedback.json");
 
 // الصفحة الرئيسية
 app.get("/", (req, res) => {
@@ -32,6 +33,7 @@ app.post("/feedback", (req, res) => {
 
     let feedbacks = [];
 
+    // قراءة التقييمات السابقة
     if (fs.existsSync(FILE)) {
       const data = fs.readFileSync(FILE, "utf8");
 
@@ -40,6 +42,7 @@ app.post("/feedback", (req, res) => {
       }
     }
 
+    // التقييم الجديد
     const newFeedback = {
       id: Date.now(),
       name: name,
@@ -52,11 +55,14 @@ app.post("/feedback", (req, res) => {
 
     feedbacks.push(newFeedback);
 
+    // حفظ التقييمات
     fs.writeFileSync(
       FILE,
       JSON.stringify(feedbacks, null, 2),
       "utf8"
     );
+
+    console.log("✅ تم حفظ تقييم جديد:", newFeedback);
 
     res.status(200).json({
       message: "تم إرسال تقييمك بنجاح 💜"
