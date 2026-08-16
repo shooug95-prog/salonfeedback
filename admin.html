@@ -3,35 +3,85 @@
 
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>لوحة التحكم - لمسة نونه</title>
 
 <style>
 
-body{
-font-family:Arial;
-background:#f5f5f5;
-padding:30px;
-text-align:center;
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    padding: 30px;
+    margin: 0;
 }
 
-table{
-width:100%;
-border-collapse:collapse;
-background:white;
+h2 {
+    color: #8e44ad;
+    text-align: center;
+    margin-bottom: 20px;
 }
 
-th,td{
-padding:12px;
-border:1px solid #ddd;
+.search-box {
+    text-align: center;
+    margin-bottom: 20px;
 }
 
-th{
-background:#8e44ad;
-color:white;
+#search {
+    width: 300px;
+    max-width: 90%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 15px;
 }
 
-h2{
-color:#8e44ad;
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th,
+td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+th {
+    background: #8e44ad;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background: #fafafa;
+}
+
+.whatsapp {
+    display: inline-block;
+    background: #25D366;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 7px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.whatsapp:hover {
+    opacity: 0.85;
+}
+
+.no-data {
+    text-align: center;
+    padding: 20px;
+    color: #777;
 }
 
 </style>
@@ -41,92 +91,179 @@ color:#8e44ad;
 <body>
 
 <h2>💜 لوحة تقييمات صالون لمسة نونه</h2>
+
+<div class="search-box">
+
 <input
-id="search"
-placeholder="🔎 ابحثي باسم العميلة..."
-onkeyup="loadData()"
-style="
-width:300px;
-padding:10px;
-margin:20px;
-border-radius:8px;
-border:1px solid #ccc;
-">
+    id="search"
+    type="text"
+    placeholder="🔎 ابحثي باسم العميلة..."
+    oninput="loadData"
+>
+
+</div>
+
+<div class="table-container">
+
 <table>
 
 <thead>
 
 <tr>
-
-<th>الاسم</th>
-
-<th>التقييم</th>
-
-<th>التعليق</th>
-
-<th>التاريخ</th>
-<th>واتساب</th>
+    <th>الاسم</th>
+    <th>رقم الجوال</th>
+    <th>الخدمة</th>
+    <th>التقييم</th>
+    <th>التعليق</th>
+    <th>التاريخ</th>
+    <th>واتساب</th>
 </tr>
 
 </thead>
 
 <tbody id="table">
 
+<tr>
+    <td colspan="7">جاري تحميل التقييمات...</td>
+</tr>
+
 </tbody>
 
 </table>
 
+</div>
+
 <script>
 
-async function loadData(){
+async function loadData() {
 
-const response=await fetch("/all-feedback");
+    try {
 
-const data=await response.json();
-const search = document.getElementById("search").value.toLowerCase();
-let html="";
+        const response = await fetch("/feedback");
 
-data
-.filter(item =>
-item.name.toLowerCase().includes(search)
-)
-.forEach(item=>{
+        if (!response.ok) {
+            throw new Error("فشل تحميل التقييمات");
+        }
 
-html+=`
+        const data = await response.json();
 
-<tr>
+        const search =
+            document.getElementById("search").value
+            .toLowerCase()
+            .trim();
 
-<td>${item.name}</td>
+        const table = document.getElementById("table");
 
-<td>${item.rating} ⭐</td>
+        const filteredData = data.filter(item => {
 
-<td>${item.comment}</td>
+            const name = item.name || "";
 
-<td>${new Date(item.date).toLocaleString()}</td>
-<td>
-<a
-href="https://wa.me/966${item.phone.substring(1)}?text=${encodeURIComponent(
+            return name
+                .toLowerCase()
+                .includes(search);
+
+        });
+
+        if (filteredData.length === 0) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" class="no-data">
+                        لا توجد تقييمات
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        let html = "";
+
+        filteredData.forEach(item => {
+
+            let phone = item.phone || "";
+
+            let whatsappButton = "—";
+
+            if (phone) {
+
+                phone = phone.replace(/\D/g, "");
+
+                if (phone.startsWith("05")) {
+                    phone = "966" + phone.substring(1);
+                }
+
+                else if (phone.startsWith("5")) {
+                    phone = "966" + phone;
+                }
+
+                const message = encodeURIComponent(
 `السلام عليكم 🌸
 
-شكراً لزيارتك صالون لمسة نونه 💜
+شكرًا لزيارتك صالون لمسة نونه 💜
 
 نسعد بتقييمك لتجربتك معنا عبر الرابط:
 
-http://localhost:3000`
-)}"
-target="_blank">
+https://salonfeedback.onrender.com`
+                );
 
-💬 إرسال
+                whatsappButton = `
+                    <a
+                        class="whatsapp"
+                        href="https://wa.me/${phone}?text=${message}"
+                        target="_blank">
+                        💬 إرسال
+                    </a>
+                `;
+            }
 
-</a>
-</td>ٍ
-</tr>
+            html += `
 
-`;
+                <tr>
 
-});
+                    <td>${item.name || "—"}</td>
 
-document.getElementById("table").innerHTML=html;
+                    <td>${item.phone || "—"}</td>
+
+                    <td>${item.service || "—"}</td>
+
+                    <td>${item.rating || "—"} ⭐</td>
+
+                    <td>${item.comment || "—"}</td>
+
+                    <td>${item.date || "—"}</td>
+
+                    <td>${whatsappButton}</td>
+
+                </tr>
+
+            `;
+
+        });
+
+        table.innerHTML = html;
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        document.getElementById("table").innerHTML = `
+
+            <tr>
+
+                <td colspan="7" class="no-data">
+
+                    ❌ حدث خطأ أثناء تحميل التقييمات
+
+                </td>
+
+            </tr>
+
+        `;
+
+    }
 
 }
 

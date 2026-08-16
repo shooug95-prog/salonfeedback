@@ -1,17 +1,21 @@
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
+const path = require("path");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-const FILE = "feedback.json";
+// عرض ملفات الواجهة
+app.use(express.static(__dirname));
+
+const FILE = path.join(__dirname, "feedback.json");
 
 // الصفحة الرئيسية
 app.get("/", (req, res) => {
-  res.send("💜 نظام تقييم صالون لمسة نونه يعمل بنجاح");
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 // استقبال التقييمات
@@ -50,7 +54,7 @@ app.post("/feedback", (req, res) => {
 
     feedbacks.push(newFeedback);
 
-    // حفظ البيانات
+    // حفظ التقييمات
     fs.writeFileSync(
       FILE,
       JSON.stringify(feedbacks, null, 2),
@@ -92,7 +96,7 @@ app.get("/feedback", (req, res) => {
   }
 });
 
-// Render يحدد PORT تلقائيًا
+// تشغيل السيرفر
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
